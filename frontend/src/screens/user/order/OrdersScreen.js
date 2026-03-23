@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fetchMyOrders } from '../../../redux/slices/user/orderSlice';
 import { COLORS, SPACING, BORDER_RADIUS, STATUS_COLORS } from '../../../constants/theme';
@@ -10,8 +11,25 @@ export default function OrdersScreen({ navigation }) {
   const dispatch = useDispatch();
   const insets = useSafeAreaInsets();
   const { orders, loading } = useSelector((s) => s.orders);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => { dispatch(fetchMyOrders()); }, []);
+  const refreshOrders = useCallback(async () => {
+    await dispatch(fetchMyOrders());
+  }, [dispatch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshOrders();
+      const interval = setInterval(refreshOrders, 30000);
+      return () => clearInterval(interval);
+    }, [refreshOrders])
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshOrders();
+    setRefreshing(false);
+  }, [refreshOrders]);
 
   const goToOrderDetail = (orderId) => {
     navigation.navigate('HomeTabs', {
@@ -61,6 +79,14 @@ export default function OrdersScreen({ navigation }) {
           keyExtractor={(item) => item._id}
           renderItem={renderOrder}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.primary]}
+              tintColor={COLORS.primary}
+            />
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>📦</Text>

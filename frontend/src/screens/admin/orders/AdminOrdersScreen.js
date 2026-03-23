@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Modal,
-  ActivityIndicator, TextInput,
+  ActivityIndicator, TextInput, RefreshControl,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
@@ -24,8 +25,25 @@ export default function AdminOrdersScreen({ navigation }) {
   const [promoBody, setPromoBody] = useState('');
   const [promoModal, setPromoModal] = useState(false);
   const [sendingPromo, setSendingPromo] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => { dispatch(fetchAllOrders()); }, []);
+  // Auto-refresh on focus
+  useFocusEffect(
+    React.useCallback(() => {
+      dispatch(fetchAllOrders());
+      const interval = setInterval(() => {
+        dispatch(fetchAllOrders());
+      }, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
+    }, [dispatch])
+  );
+
+  // Manual refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await dispatch(fetchAllOrders());
+    setRefreshing(false);
+  };
 
   const openStatusModal = (order) => {
     setSelectedOrder(order);
@@ -107,6 +125,7 @@ export default function AdminOrdersScreen({ navigation }) {
           keyExtractor={(item) => item._id}
           renderItem={renderOrder}
           contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>📋</Text>

@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, TouchableOpacity, RefreshControl } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { fetchOrder } from '../../../redux/slices/user/orderSlice';
@@ -17,8 +18,26 @@ export default function OrderDetailScreen({ route, navigation }) {
   const { user } = useSelector((s) => s.auth);
   const [exporting, setExporting] = useState(false);
   const [reviewEligibility, setReviewEligibility] = useState({});
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => { if (orderId) dispatch(fetchOrder(orderId)); }, [orderId]);
+  const refreshOrderData = useCallback(async () => {
+    if (!orderId) return;
+    await dispatch(fetchOrder(orderId));
+  }, [dispatch, orderId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshOrderData();
+      const interval = setInterval(refreshOrderData, 30000);
+      return () => clearInterval(interval);
+    }, [refreshOrderData])
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshOrderData();
+    setRefreshing(false);
+  }, [refreshOrderData]);
 
   useEffect(() => {
     const loadReviewEligibility = async () => {
@@ -72,7 +91,18 @@ export default function OrderDetailScreen({ route, navigation }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScreenHeader title="ORDER DETAILS" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
+      >
         {/* Order ID & Status */}
         <View style={styles.card}>
           <View style={styles.row}>

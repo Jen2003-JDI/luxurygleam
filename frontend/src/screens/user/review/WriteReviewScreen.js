@@ -11,6 +11,28 @@ import { createReview, updateReview } from '../../../redux/slices/user/reviewSli
 import { COLORS, SPACING, BORDER_RADIUS } from '../../../constants/theme';
 import ScreenHeader from '../../../components/ui/ScreenHeader';
 
+const BLOCKED_WORDS = [
+  'spam', 'fake', 'scam', 'stolen', 'counterfeit', 'adult', 'violence',
+  'hate', 'racist', 'nude', 'explicit', 'offensive', 'abusive',
+  'fuck', 'fucking', 'bitch', 'shit', 'asshole', 'bastard',
+  'dick', 'pussy', 'cunt', 'motherfucker',
+];
+
+const containsBlockedWords = (text = '') => {
+  const normalized = text.toLowerCase();
+  return BLOCKED_WORDS.some((word) => {
+    const pattern = new RegExp(`\\b${word}\\b`, 'i');
+    return pattern.test(normalized);
+  });
+};
+
+const hashBlockedWords = (text = '') => {
+  return BLOCKED_WORDS.reduce((acc, word) => {
+    const pattern = new RegExp(`\\b${word}\\b`, 'gi');
+    return acc.replace(pattern, '*'.repeat(word.length));
+  }, text);
+};
+
 export default function WriteReviewScreen({ route, navigation }) {
   const { productId, orderId, existingReview, productName } = route.params || {};
   const dispatch = useDispatch();
@@ -50,11 +72,15 @@ export default function WriteReviewScreen({ route, navigation }) {
     if (!title.trim()) return Toast.show({ type: 'error', text1: 'Please add a review title' });
     if (!comment.trim()) return Toast.show({ type: 'error', text1: 'Please write your review' });
 
+    const sanitizedTitle = hashBlockedWords(title.trim());
+    const sanitizedComment = hashBlockedWords(comment.trim());
+    const wasFiltered = containsBlockedWords(title) || containsBlockedWords(comment);
+
     if (isEdit) {
       const formData = new FormData();
       formData.append('rating', rating.toString());
-      formData.append('title', title);
-      formData.append('comment', comment);
+      formData.append('title', sanitizedTitle);
+      formData.append('comment', sanitizedComment);
       formData.append('retainedImages', JSON.stringify(existingImages));
       newImages.forEach((uri, i) => {
         const ext = uri.split('.').pop();
@@ -63,6 +89,9 @@ export default function WriteReviewScreen({ route, navigation }) {
 
       const result = await dispatch(updateReview({ id: existingReview._id, formData }));
       if (updateReview.fulfilled.match(result)) {
+        if (wasFiltered) {
+          Toast.show({ type: 'info', text1: 'Some words were filtered automatically' });
+        }
         Toast.show({ type: 'success', text1: '✓ Review Updated' });
         navigation.goBack();
       } else {
@@ -73,14 +102,17 @@ export default function WriteReviewScreen({ route, navigation }) {
       formData.append('productId', productId);
       formData.append('orderId', orderId);
       formData.append('rating', rating.toString());
-      formData.append('title', title);
-      formData.append('comment', comment);
+      formData.append('title', sanitizedTitle);
+      formData.append('comment', sanitizedComment);
       newImages.forEach((uri, i) => {
         const ext = uri.split('.').pop();
         formData.append('images', { uri, name: `review_${i}.${ext}`, type: `image/${ext}` });
       });
       const result = await dispatch(createReview(formData));
       if (createReview.fulfilled.match(result)) {
+        if (wasFiltered) {
+          Toast.show({ type: 'info', text1: 'Some words were filtered automatically' });
+        }
         Toast.show({
           type: 'success',
           text1: '✨ Review Submitted!',

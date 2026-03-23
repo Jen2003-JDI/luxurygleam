@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions,} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, RefreshControl } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import { fetchSalesAnalytics, setYear } from '../../../redux/slices/admin/analyticsSlice';
 import { COLORS, SPACING, BORDER_RADIUS } from '../../../constants/theme';
@@ -47,8 +48,41 @@ export default function AdminSalesDashboardScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { summary, months, topProducts, categoryStats, statusBreakdown, year, loading, error } = useSelector((s) => s.analytics);
   const [activeTab, setActiveTab] = useState('overview');
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => { dispatch(fetchSalesAnalytics(year)); }, [year]);
+  const canGoBack = navigation?.canGoBack?.() || false;
+  const hasDrawer = typeof navigation?.openDrawer === 'function';
+
+  // Auto-refresh on focus
+  useFocusEffect(
+    React.useCallback(() => {
+      dispatch(fetchSalesAnalytics(year));
+      const interval = setInterval(() => {
+        dispatch(fetchSalesAnalytics(year));
+      }, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
+    }, [year, dispatch])
+  );
+
+  // Manual refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await dispatch(fetchSalesAnalytics(year));
+    setRefreshing(false);
+  };
+
+  // Handle back button safely
+  const handleGoBack = () => {
+    if (navigation?.canGoBack?.()) {
+      navigation.goBack();
+    }
+  };
+
+  const handleOpenDrawer = () => {
+    if (hasDrawer) {
+      navigation.openDrawer();
+    }
+  };
 
   const handleYearChange = (delta) => {
     const newYear = year + delta;
@@ -140,7 +174,11 @@ export default function AdminSalesDashboardScreen({ navigation }) {
   if (loading && !summary) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <ScreenHeader title="SALES DASHBOARD" onBack={() => navigation.goBack()} />
+        <ScreenHeader
+          title="SALES DASHBOARD"
+          onBack={canGoBack ? handleGoBack : undefined}
+          onMenuPress={!canGoBack && hasDrawer ? handleOpenDrawer : undefined}
+        />
         <View style={styles.loadingBox}>
           <ActivityIndicator color={COLORS.primary} size="large" />
           <Text style={styles.loadingText}>Loading analytics...</Text>
@@ -151,7 +189,11 @@ export default function AdminSalesDashboardScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScreenHeader title="SALES DASHBOARD" onBack={() => navigation.goBack()} />
+      <ScreenHeader
+        title="SALES DASHBOARD"
+        onBack={canGoBack ? handleGoBack : undefined}
+        onMenuPress={!canGoBack && hasDrawer ? handleOpenDrawer : undefined}
+      />
 
       {/* Year Selector */}
       <View style={styles.yearSelector}>
@@ -181,7 +223,11 @@ export default function AdminSalesDashboardScreen({ navigation }) {
         ))}
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />}
+      >
 
         {error && (
           <View style={styles.errorBanner}>

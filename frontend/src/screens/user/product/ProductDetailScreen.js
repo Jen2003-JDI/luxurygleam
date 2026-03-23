@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Image, TouchableOpacity,
-  FlatList, ActivityIndicator, Dimensions,
+  FlatList, ActivityIndicator, Dimensions, RefreshControl,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import { fetchProduct } from '../../../redux/slices/user/productSlice';
 import { fetchReviews } from '../../../redux/slices/user/reviewSlice';
@@ -21,11 +22,28 @@ export default function ProductDetailScreen({ route, navigation }) {
   const { reviews } = useSelector((s) => s.reviews);
   const [activeImg, setActiveImg] = useState(0);
   const [qty, setQty] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    dispatch(fetchProduct(productId));
-    dispatch(fetchReviews({ productId }));
-  }, [productId]);
+  const refreshProductData = useCallback(async () => {
+    await Promise.all([
+      dispatch(fetchProduct(productId)),
+      dispatch(fetchReviews({ productId })),
+    ]);
+  }, [dispatch, productId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshProductData();
+      const interval = setInterval(refreshProductData, 30000);
+      return () => clearInterval(interval);
+    }, [refreshProductData])
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshProductData();
+    setRefreshing(false);
+  }, [refreshProductData]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -71,7 +89,17 @@ export default function ProductDetailScreen({ route, navigation }) {
     <View style={styles.container}>
       <ScreenHeader title={product.category} onBack={() => navigation.goBack()} />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
+      >
         {/* Image Gallery */}
         <View>
           <FlatList

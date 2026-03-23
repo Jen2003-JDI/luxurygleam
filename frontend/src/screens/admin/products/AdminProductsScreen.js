@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput,
-  ScrollView, Image, Alert, ActivityIndicator,
+  ScrollView, Image, Alert, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fetchProducts, fetchFeatured, createProduct, updateProduct, deleteProduct } from '../../../redux/slices/user/productSlice';
@@ -24,8 +25,25 @@ export default function AdminProductsScreen({ navigation }) {
   const [images, setImages] = useState([]);
   const [saving, setSaving] = useState(false);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => { dispatch(fetchProducts({ limit: 50 })); }, []);
+  // Auto-refresh on focus
+  useFocusEffect(
+    React.useCallback(() => {
+      dispatch(fetchProducts({ limit: 50 }));
+      const interval = setInterval(() => {
+        dispatch(fetchProducts({ limit: 50 }));
+      }, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
+    }, [dispatch])
+  );
+
+  // Manual refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await dispatch(fetchProducts({ limit: 50 }));
+    setRefreshing(false);
+  };
 
   const update = (field, val) => setForm((p) => ({ ...p, [field]: val }));
 
@@ -194,6 +212,7 @@ export default function AdminProductsScreen({ navigation }) {
           keyExtractor={(item) => item._id}
           renderItem={renderProduct}
           contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyText}>No products yet. Add your first product!</Text>

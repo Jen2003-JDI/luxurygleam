@@ -17,7 +17,8 @@ import AdminSalesDashboardScreen from '../screens/admin/dashboard/AdminSalesDash
 import AdminProductsScreen from '../screens/admin/products/AdminProductsScreen';
 import AdminOrdersScreen from '../screens/admin/orders/AdminOrdersScreen';
 import AdminUsersScreen from '../screens/admin/users/AdminUsersScreen';
-import AdminUserDetailScreen from '../screens/admin/users/AdminUserDetailScreen';import AdminReviewsScreen from '../screens/admin/reviews/AdminReviewsScreen';
+import AdminUserDetailScreen from '../screens/admin/users/AdminUserDetailScreen';
+import AdminReviewsScreen from '../screens/admin/reviews/AdminReviewsScreen';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
 import { logout } from '../redux/slices/user/authSlice';
 
@@ -29,12 +30,14 @@ function CustomDrawerContent({ navigation }) {
   const insets = useSafeAreaInsets();
 
   const menuItems = [
-    { label: 'Home', icon: '🏠', screen: 'HomeTabs' },
+    ...(user?.role === 'admin' 
+      ? [{ label: 'Dashboard', icon: '📊', screen: 'HomeTabs' }]
+      : [{ label: 'Home', icon: '🏠', screen: 'HomeTabs' }]
+    ),
     { label: 'My Profile', icon: '👤', screen: 'Profile' },
-    { label: 'My Orders', icon: '📦', screen: 'Orders' },
+    ...(user?.role !== 'admin' ? [{ label: 'My Orders', icon: '📦', screen: 'Orders' }] : []),
     { label: 'Notifications', icon: '🔔', screen: 'Notifications' },
     ...(user?.role === 'admin' ? [
-      { label: 'Sales Dashboard', icon: '📊', screen: 'AdminSalesDashboard' },
       { label: 'Manage Products', icon: '💎', screen: 'AdminProducts' },
       { label: 'Manage Orders', icon: '📋', screen: 'AdminOrders' },
       { label: 'Manage Reviews', icon: '⭐', screen: 'AdminReviews' },
@@ -106,24 +109,29 @@ function CustomDrawerContent({ navigation }) {
 }
 
 export default function DrawerNavigator() {
+  const { user } = useSelector((s) => s.auth);
+  const isAdmin = user?.role === 'admin';
+  const HomeComponent = isAdmin ? AdminSalesDashboardScreen : MainTabNavigator;
+
   return (
     <Drawer.Navigator
+      key={isAdmin ? 'admin-drawer' : 'user-drawer'}
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: false,
         drawerStyle: { backgroundColor: COLORS.surface, width: 290 },
       }}
+      initialRouteName="HomeTabs"
     >
-      {/* ── Shared ──────────────────────────────────────────────── */}
-      <Drawer.Screen name="HomeTabs" component={MainTabNavigator} />
+      {/* ── Default Home (User or Admin) ─────────────────────────── */}
+      <Drawer.Screen name="HomeTabs" component={HomeComponent} />
 
       {/* ── User Screens ─────────────────────────────────────────── */}
       <Drawer.Screen name="Profile" component={ProfileScreen} />
-      <Drawer.Screen name="Orders" component={OrdersScreen} />
+      {!isAdmin && <Drawer.Screen name="Orders" component={OrdersScreen} />}
       <Drawer.Screen name="Notifications" component={NotificationsScreen} />
 
       {/* ── Admin Screens ────────────────────────────────────────── */}
-      <Drawer.Screen name="AdminSalesDashboard" component={AdminSalesDashboardScreen} />
       <Drawer.Screen name="AdminProducts" component={AdminProductsScreen} />
       <Drawer.Screen name="AdminOrders" component={AdminOrdersScreen} />
       <Drawer.Screen name="AdminReviews" component={AdminReviewsScreen} />

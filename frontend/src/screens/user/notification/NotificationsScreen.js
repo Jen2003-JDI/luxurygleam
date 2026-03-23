@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator,
+  View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   fetchNotifications, markNotificationRead, markAllNotificationsRead,
@@ -17,8 +18,25 @@ export default function NotificationsScreen({ navigation }) {
   const dispatch = useDispatch();
   const insets = useSafeAreaInsets();
   const { notifications, loading } = useSelector((s) => s.notifications);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => { dispatch(fetchNotifications()); }, []);
+  const refreshNotifications = useCallback(async () => {
+    await dispatch(fetchNotifications());
+  }, [dispatch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshNotifications();
+      const interval = setInterval(refreshNotifications, 30000);
+      return () => clearInterval(interval);
+    }, [refreshNotifications])
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshNotifications();
+    setRefreshing(false);
+  }, [refreshNotifications]);
 
   const handlePress = (notif) => {
     if (!notif.isRead) dispatch(markNotificationRead(notif._id));
@@ -78,6 +96,14 @@ export default function NotificationsScreen({ navigation }) {
           keyExtractor={(item) => item._id}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.primary]}
+              tintColor={COLORS.primary}
+            />
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>🔔</Text>

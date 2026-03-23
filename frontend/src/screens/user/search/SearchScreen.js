@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity,
-  ActivityIndicator, ScrollView, Modal,
+  ActivityIndicator, ScrollView, Modal, RefreshControl,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fetchProducts } from '../../../redux/slices/user/productSlice';
 import { COLORS, SPACING, BORDER_RADIUS, CATEGORIES } from '../../../constants/theme';
@@ -22,6 +23,7 @@ export default function SearchScreen({ navigation, route }) {
   const [sort, setSort] = useState('newest');
   const [filterVisible, setFilterVisible] = useState(false);
   const [page, setPage] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
 
   const search = useCallback((reset = true, overrides = {}) => {
     const p = reset ? 1 : page;
@@ -48,6 +50,14 @@ export default function SearchScreen({ navigation, route }) {
     search(true);
   }, [selectedCategory, sort, debouncedKeyword]);
 
+  useFocusEffect(
+    useCallback(() => {
+      search(true);
+      const interval = setInterval(() => search(true), 30000);
+      return () => clearInterval(interval);
+    }, [search])
+  );
+
   const sortOptions = [
     { label: 'Newest', value: 'newest' },
     { label: 'Price: Low to High', value: 'price_asc' },
@@ -63,6 +73,12 @@ export default function SearchScreen({ navigation, route }) {
   };
 
   const applyFilters = () => { search(true); setFilterVisible(false); };
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await search(true);
+    setRefreshing(false);
+  }, [search]);
+
   const clearFilters = () => {
     setMinPrice(''); setMaxPrice(''); setSelectedCategory('');
     setFilterVisible(false);
@@ -157,6 +173,14 @@ export default function SearchScreen({ navigation, route }) {
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.grid}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.primary]}
+              tintColor={COLORS.primary}
+            />
+          }
           renderItem={({ item }) => (
             <ProductCard
               product={item}

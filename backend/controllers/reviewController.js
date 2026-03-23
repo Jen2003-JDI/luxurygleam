@@ -5,14 +5,72 @@ const { deleteImage } = require('../config/cloudinary');
 
 // Keywords for inappropriate content detection
 const INAPPROPRIATE_KEYWORDS = [
-  'spam', 'fake', 'scam', 'stolen', 'counterfeit', 'adult', 'violence', 
-  'hate', 'racist', 'nude', 'explicit', 'offensive', 'abusive'
+  'spam', 'fake', 'scam', 'stolen', 'counterfeit', 'adult', 'violence',
+  'hate', 'racist', 'nude', 'explicit', 'offensive', 'abusive',
+  'fuck', 'fucking', 'bitch', 'shit', 'asshole', 'bastard',
+  'dick', 'pussy', 'cunt', 'motherfucker',
 ];
 
 // Moderation function to check for inappropriate content
-const checkInappropriateContent = (text) => {
-  const lowerText = text.toLowerCase();
-  return INAPPROPRIATE_KEYWORDS.some(keyword => lowerText.includes(keyword));
+const checkInappropriateContent = (text = '') => {
+  const lowerText = String(text).toLowerCase();
+  return INAPPROPRIATE_KEYWORDS.some((keyword) => {
+    const pattern = new RegExp(`\\b${keyword}\\b`, 'i');
+    return pattern.test(lowerText);
+  });
+};
+
+const censorText = (text = '') => {
+  return INAPPROPRIATE_KEYWORDS.reduce((acc, keyword) => {
+    const pattern = new RegExp(`\\b${keyword}\\b`, 'gi');
+    return acc.replace(pattern, '*'.repeat(keyword.length));
+  }, String(text));
+};
+
+const sanitizeReviewContent = (review) => {
+  let changed = false;
+
+  if (typeof review.title === 'string') {
+    const sanitizedTitle = censorText(review.title);
+    if (sanitizedTitle !== review.title) {
+      review.title = sanitizedTitle;
+      changed = true;
+    }
+  }
+
+  if (typeof review.comment === 'string') {
+    const sanitizedComment = censorText(review.comment);
+    if (sanitizedComment !== review.comment) {
+      review.comment = sanitizedComment;
+      changed = true;
+    }
+  }
+
+  if (Array.isArray(review.replies)) {
+    review.replies.forEach((reply) => {
+      if (typeof reply?.text === 'string') {
+        const sanitizedReplyText = censorText(reply.text);
+        if (sanitizedReplyText !== reply.text) {
+          reply.text = sanitizedReplyText;
+          changed = true;
+        }
+      }
+    });
+  }
+
+  return changed;
+};
+
+const sanitizeExistingPendingReviews = async () => {
+  const pendingReviews = await Review.find({ status: 'pending' });
+  if (!pendingReviews.length) return;
+
+  await Promise.all(
+    pendingReviews.map(async (review) => {
+      const changed = sanitizeReviewContent(review);
+      if (changed) await review.save();
+    })
+  );
 };
 
 const normalizeReviewImages = (images = []) => {
@@ -47,8 +105,8 @@ const createReview = asyncHandler(async (req, res) => {
     res.status(400); throw new Error('You have already reviewed this product');
   }
 
-  // Check for inappropriate content
-  const isInappropriate = checkInappropriateContent(title) || checkInappropriateContent(comment);
+  const sanitizedTitle = censorText(title);
+  const sanitizedComment = censorText(comment);
   
   const images = Array.isArray(req.files)
     ? req.files
@@ -60,17 +118,19 @@ const createReview = asyncHandler(async (req, res) => {
     : [];
   const review = await Review.create({
     user: req.user._id, product: productId, order: orderId,
-    rating: Number(rating), title, comment, images, isVerifiedPurchase: true,
-    status: isInappropriate ? 'rejected' : 'pending',
-    flaggedReason: isInappropriate ? 'Inappropriate content detected' : undefined,
+    rating: Number(rating), title: sanitizedTitle, comment: sanitizedComment, images, isVerifiedPurchase: true,
+    status: 'pending',
   });
   
   await review.populate('user', 'name avatar');
-  res.status(201).json({ 
-    success: true, 
+  const hadInappropriateContent = checkInappropriateContent(title) || checkInappropriateContent(comment);
+  res.status(201).json({
+    success: true,
     review,
-    status: isInappropriate ? 'pending-review' : 'pending',
-    message: isInappropriate ? 'Your review was flagged for moderation and will be reviewed by our team.' : 'Review submitted successfully'
+    status: 'pending',
+    message: hadInappropriateContent
+      ? 'Review submitted. Inappropriate words were filtered automatically.'
+      : 'Review submitted successfully',
   });
 });
 
@@ -104,6 +164,7 @@ const getAllReviews = asyncHandler(async (req, res) => {
   if (req.user.role !== 'admin') {
     res.status(403); throw new Error('Only admins can view all reviews');
   }
+  await sanitizeExistingPendingReviews();
   const { page = 1, limit = 20, status = 'all', productId } = req.query;
   const skip = (Number(page) - 1) * Number(limit);
   
@@ -152,9 +213,10 @@ const updateReview = asyncHandler(async (req, res) => {
   }
   
   const { rating, title, comment, retainedImages } = req.body;
+
   if (rating) review.rating = Number(rating);
-  if (title) review.title = title;
-  if (comment) review.comment = comment;
+  if (typeof title === 'string') review.title = censorText(title);
+  if (typeof comment === 'string') review.comment = censorText(comment);
 
   // Handle image updates: keep selected old images + append new uploads (max 3)
   if (typeof retainedImages !== 'undefined' || (Array.isArray(req.files) && req.files.length > 0)) {
@@ -271,7 +333,7 @@ const replyToReview = asyncHandler(async (req, res) => {
   
   const reply = {
     user: req.user._id,
-    text: text.trim(),
+    text: censorText(text.trim()),
     isAdminReply: req.user.role === 'admin',
   };
   
@@ -322,5 +384,6 @@ module.exports = {
   updateReviewStatus,
   replyToReview,
   getReviewAnalytics,
-  checkInappropriateContent
+  checkInappropriateContent,
+  censorText,
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, FlatList,
   TouchableOpacity, RefreshControl, ActivityIndicator,
@@ -19,24 +19,33 @@ export default function HomeScreen({ navigation }) {
   const { featured, products, loading } = useSelector((s) => s.products);
   const { user } = useSelector((s) => s.auth);
   const unreadCount = useSelector(selectUnreadCount);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const refreshHomeData = useCallback(async () => {
+    await Promise.all([
+      dispatch(fetchFeatured()),
+      dispatch(fetchProducts({ limit: 12 })),
+      dispatch(fetchNotifications()),
+    ]);
+  }, [dispatch]);
 
   useEffect(() => {
-    dispatch(fetchFeatured());
-    dispatch(fetchProducts({ limit: 12 }));
-    dispatch(fetchNotifications());
-  }, []);
+    refreshHomeData();
+  }, [refreshHomeData]);
 
   useFocusEffect(
     useCallback(() => {
-      dispatch(fetchFeatured());
-      dispatch(fetchProducts({ limit: 12 }));
-    }, [dispatch])
+      refreshHomeData();
+      const interval = setInterval(refreshHomeData, 30000);
+      return () => clearInterval(interval);
+    }, [refreshHomeData])
   );
 
-  const onRefresh = useCallback(() => {
-    dispatch(fetchFeatured());
-    dispatch(fetchProducts({ limit: 12 }));
-  }, []);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshHomeData();
+    setRefreshing(false);
+  }, [refreshHomeData]);
 
   const renderCategory = ({ item }) => (
     <TouchableOpacity
@@ -60,7 +69,14 @@ export default function HomeScreen({ navigation }) {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
       >
         {/* Hero Banner */}
         <View style={styles.heroBanner}>

@@ -1,14 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,
-  ActivityIndicator, TextInput, Modal, FlatList,
+  ActivityIndicator, TextInput, Modal, FlatList, RefreshControl,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fetchReviews, replyToReview } from '../../../redux/slices/user/reviewSlice';
 import { COLORS, SPACING, BORDER_RADIUS } from '../../../constants/theme';
 import ScreenHeader from '../../../components/ui/ScreenHeader';
+
+const BLOCKED_WORDS = [
+  'spam', 'fake', 'scam', 'stolen', 'counterfeit', 'adult', 'violence',
+  'hate', 'racist', 'nude', 'explicit', 'offensive', 'abusive',
+  'fuck', 'fucking', 'bitch', 'shit', 'asshole', 'bastard',
+  'dick', 'pussy', 'cunt', 'motherfucker',
+];
+
+const containsBlockedWords = (text = '') => {
+  const normalized = text.toLowerCase();
+  return BLOCKED_WORDS.some((word) => {
+    const pattern = new RegExp(`\\b${word}\\b`, 'i');
+    return pattern.test(normalized);
+  });
+};
+
+const hashBlockedWords = (text = '') => {
+  return BLOCKED_WORDS.reduce((acc, word) => {
+    const pattern = new RegExp(`\\b${word}\\b`, 'gi');
+    return acc.replace(pattern, '*'.repeat(word.length));
+  }, text);
+};
 
 export default function ReviewsScreen({ route, navigation }) {
   const { productId, productName } = route.params;
@@ -23,19 +46,41 @@ export default function ReviewsScreen({ route, navigation }) {
   const [replying, setReplying] = useState(false);
   const [sortBy, setSortBy] = useState('newest'); // newest, oldest, highest, lowest
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    dispatch(fetchReviews({ productId, page }));
-  }, [productId, page]);
+  const refreshReviews = useCallback(async () => {
+    await dispatch(fetchReviews({ productId, page }));
+  }, [dispatch, productId, page]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshReviews();
+      const interval = setInterval(refreshReviews, 30000);
+      return () => clearInterval(interval);
+    }, [refreshReviews])
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshReviews();
+    setRefreshing(false);
+  }, [refreshReviews]);
 
   const handleReply = async () => {
     if (!replyText.trim()) {
       return Toast.show({ type: 'error', text1: 'Reply cannot be empty' });
     }
+
+    const sanitizedReply = hashBlockedWords(replyText.trim());
+    const wasFiltered = containsBlockedWords(replyText);
+
     setReplying(true);
-    const result = await dispatch(replyToReview({ reviewId: replyingTo._id, text: replyText }));
+    const result = await dispatch(replyToReview({ reviewId: replyingTo._id, text: sanitizedReply }));
     setReplying(false);
     if (replyToReview.fulfilled.match(result)) {
+      if (wasFiltered) {
+        Toast.show({ type: 'info', text1: 'Some words were filtered automatically' });
+      }
       Toast.show({ type: 'success', text1: '✓ Reply Added' });
       setReplyText('');
       setReplyingTo(null);
@@ -240,6 +285,14 @@ export default function ReviewsScreen({ route, navigation }) {
           keyExtractor={(r) => r._id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.primary]}
+              tintColor={COLORS.primary}
+            />
+          }
         />
       )}
 

@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList, Modal,
-  TextInput, ActivityIndicator, Image,
+  TextInput, ActivityIndicator, Image, RefreshControl, ScrollView,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -16,6 +17,7 @@ import ScreenHeader from '../../../components/ui/ScreenHeader';
 export default function AdminReviewsScreen({ navigation }) {
   const dispatch = useDispatch();
   const insets = useSafeAreaInsets();
+  const { user } = useSelector((s) => s.auth);
   const { allReviews, adminLoading, analytics } = useSelector((s) => s.reviews);
 
   const [statusFilter, setStatusFilter] = useState('all');
@@ -24,11 +26,44 @@ export default function AdminReviewsScreen({ navigation }) {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    dispatch(getAllReviews({ page: 1, status: statusFilter }));
-    dispatch(fetchReviewAnalytics());
-  }, [statusFilter]);
+  // Prevent non-admins from accessing this screen
+  if (user?.role !== 'admin') {
+    return (
+      <View style={styles.container}>
+        <ScreenHeader title="MANAGE REVIEWS" onBack={() => navigation.goBack()} />
+        <View style={styles.centerContent}>
+          <Text style={styles.emptyText}>Access Denied: Admin only</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Auto-refresh on focus
+  useFocusEffect(
+    React.useCallback(() => {
+      try {
+        dispatch(getAllReviews({ page: 1, status: statusFilter }));
+        dispatch(fetchReviewAnalytics());
+        const interval = setInterval(() => {
+          dispatch(getAllReviews({ page: 1, status: statusFilter }));
+          dispatch(fetchReviewAnalytics());
+        }, 30000); // Refresh every 30 seconds
+        return () => clearInterval(interval);
+      } catch (err) {
+        console.warn('AdminReviewsScreen: Focus effect error', err);
+      }
+    }, [statusFilter, dispatch])
+  );
+
+  // Manual refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await dispatch(getAllReviews({ page: 1, status: statusFilter }));
+    await dispatch(fetchReviewAnalytics());
+    setRefreshing(false);
+  };
 
   const handleApprove = async (reviewId) => {
     setActionLoading(true);
@@ -216,6 +251,13 @@ export default function AdminReviewsScreen({ navigation }) {
           renderItem={renderReview}
           keyExtractor={(r) => r._id}
           contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[COLORS.primary]}
+            />
+          }
         />
       )}
 
@@ -231,7 +273,7 @@ export default function AdminReviewsScreen({ navigation }) {
           </View>
 
           {selectedReview && (
-            <View style={styles.modalContent}>
+            <ScrollView style={styles.modalContent} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
               {/* User Info */}
               <View style={styles.detailSection}>
                 <View style={styles.userDetail}>
@@ -380,7 +422,7 @@ export default function AdminReviewsScreen({ navigation }) {
                   </View>
                 </View>
               )}
-            </View>
+            </ScrollView>
           )}
         </View>
       </Modal>
@@ -439,7 +481,8 @@ const styles = StyleSheet.create({
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SPACING.md, paddingBottom: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   closeBtn: { color: COLORS.primary, fontSize: 14, fontWeight: '600' },
   modalTitle: { color: COLORS.text, fontSize: 16, fontWeight: '700' },
-  modalContent: { flex: 1, padding: SPACING.md, gap: SPACING.md },
+  modalContent: { flex: 1 },
+  scrollContent: { padding: SPACING.md, gap: SPACING.md },
 
   detailSection: { gap: SPACING.sm },
   sectionTitle: { color: COLORS.text, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
@@ -472,7 +515,7 @@ const styles = StyleSheet.create({
   deleteBtn: { backgroundColor: COLORS.error + '20' },
   actionBtnText: { color: COLORS.text, fontWeight: '700', fontSize: 13 },
 
-  replySection: { gap: SPACING.sm, marginTop: SPACING.md },
+  replySection: { gap: SPACING.sm, marginTop: SPACING.md, marginBottom: SPACING.xl },
   replyInputBox: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md, padding: SPACING.md, color: COLORS.text, fontSize: 13, minHeight: 80, textAlignVertical: 'top' },
   charCount: { color: COLORS.textMuted, fontSize: 11, textAlign: 'right' },
   replyButtons: { flexDirection: 'row', gap: SPACING.md },
