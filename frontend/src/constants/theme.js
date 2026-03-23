@@ -81,3 +81,4 @@ export const STATUS_COLORS = {
 };
 
 export const API_URL = 'http://10.122.119.26:5000/api'; // Change to your server IP/port
+//export const API_URL = 'http://196.168.100.58:5000/api'; // Change to your server IP/port
