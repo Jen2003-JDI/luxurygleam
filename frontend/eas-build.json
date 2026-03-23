@@ -1,0 +1,51 @@
+﻿{
+  "id": "73b00f0f-9c06-4a31-a77f-3b4bcd6a6447",
+  "status": "ERRORED",
+  "platform": "ANDROID",
+  "error": {
+    "errorCode": "UNKNOWN_ERROR",
+    "message": "Unknown error. See logs of the Prebuild build phase for more information."
+  },
+  "artifacts": {},
+  "fingerprint": {
+    "id": "019d1b04-c1cb-73f0-adad-08c468e9b56f",
+    "hash": "b555f826c58c1872f7245ede65b2a84f03409913"
+  },
+  "initiatingActor": {
+    "id": "96fb536e-2738-467c-95cb-8006d08f46cb",
+    "displayName": "jenard112003"
+  },
+  "logFiles": [
+    "https://job-logs.eascdn.net/production/73b00f0f-9c06-4a31-a77f-3b4bcd6a6447/1774274790078-45b0114e-c85b-4dd3-ad82-0094f814b015.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260323%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260323T140726Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=68da66baf1bd8fb40611591a3214dcf960ba2342c3f9a76bb5bb9fa05f4d2e7ddf76df6e591fb526087aec7146e27ad78075d6bd2ea79183835336af235e2e7a1a4f2793b5e58fa4edecbdac4f40aef9a463450ec7ac513b6c54b2214c47e6c8186eb6d4654c4b2e83ff09e8258e9d2982360050875c06701d7bfd07f02047d81a725195a417c09cdc38cfeaf7b9a81d3664f6911bd10e74a2fae5dff41d36de69855b0fb7b1b189f395c107de04def3b222c0ff0a6c5843682e5fead5201e9aafbaa6b9bdf5829cc4e5f4679db8fe9e7332c5148c6ecc10d9429b6f3b09cf728313bccf614524a9f2426f1d0206c66f730ff30aa388d127a98a9bac2f3e7328",
+    "https://job-logs.eascdn.net/production/73b00f0f-9c06-4a31-a77f-3b4bcd6a6447/1774274793566-29db188f-dd83-4e8f-8385-cc7f925164b4.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260323%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260323T140726Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=f46dd267af8a0f59c0d3fe4fa4aa086f742e2e3d6b32ace39b4777aaa073b338f158e0344a57a3e5244a96550f06a4c859fc61be23c78c575179481611b295c81498a06f7cce7630c2b45305d6649640e30a1045620e67cc3c2452d17a89ba16ae44d53af546c020431190074e31171f20e877875475f817d39f77d5455fc07c68ca808142c51636673c3d2929615673297b2c832127ce5517486753ca954e746ab349ffffdc6b731d01cb8ea647121aeffc064d80ccff6185c99acf6db41b65adad98c049dfbc6acd5d44da69c145cb7b0c827a316d41ca9db820d7874885cd2ee19d47964762900e33175735b451be7adee25ebae9fc896584baeeb24b84a2",
+    "https://job-logs.eascdn.net/production/73b00f0f-9c06-4a31-a77f-3b4bcd6a6447/1774274793877-184f0234-2a40-49e1-9405-cac78407cf05.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260323%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260323T140726Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=bd010b0747310b567d18b58f83b8012ecea8dc2ebda9abea87f6aa05cfa761d3d7834d2d4dab61cb0880df205730e07a92749da4cf6ec3356de5a083b43d0beb28477c65fbefc9c663fe042ea2c33bfa202ede5700d9aee76170ae8ff0305744f69a5fb7b4a7049bcae32516d761e1683c2da0c8afbf9434e66cdf19ce8427d65c85bafd76f4e93a1aabad20a8312a04e2460960c044de2ab2693bf1b23b39bd5fd20bb1aea9d417a1a27a80e67612588991e7a05958a06f46a9475ff76264e8b9c53325c041a83d14b3afe92da10f96be1682f0be992fc05e41eb3488e3244bf700a2b8c48fd746caa3981fe3cd82881ead4b1e244e01416920c58f0b43067f",
+    "https://job-logs.eascdn.net/production/73b00f0f-9c06-4a31-a77f-3b4bcd6a6447/1774274794085-7cb8698e-4cd1-4fef-ac89-8d169880ad83.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260323%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260323T140726Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=0d3e23fd7094472723c6b13f9987957147e3a13b12a8f8f7c5523200dfbb3b8885ed4543380b41174a716b5cf8df7130b34771ee3baa3d39394e592c673ff485f12f9f29e8b735c70c51f4554995f0fa58d95c63126bf608d83f44e6d33f085b3e9177eb5cc28b82fc6fc9e6bfbdb7f76da7795d9c62696dfa980323a551b76839a4f9a36d06ccc229a8eb9820fe4ee9d5223bd5c1c396588d4d2c2ee9750310fe53fe9ac76d68348409e0bb017fd8aa1a0be593cfb1b58f6d9d1e67236e0a1f497d14b28800664da300d8b28c73f705431e04cfdf5ebc22cb69f74357f6d9c5a5ba5ac9299ed2890c3b124b7c265b4805fd1b674858aeeb40840bf12cd904ad"
+  ],
+  "project": {
+    "id": "219ce62c-9a42-4ddd-8bb6-726cbe0c1160",
+    "name": "luxury-gleam",
+    "slug": "luxury-gleam",
+    "ownerAccount": {
+      "id": "765d4ab4-d63f-4240-80c0-921770080783",
+      "name": "jenard112003"
+    }
+  },
+  "distribution": "INTERNAL",
+  "buildProfile": "production-apk",
+  "sdkVersion": "54.0.0",
+  "appVersion": "1.0.0",
+  "appBuildVersion": "1",
+  "gitCommitHash": "2a67a33cf8418e4d01a7764c94227ec34c89dbba",
+  "gitCommitMessage": "new commit",
+  "priority": "NORMAL_PLUS",
+  "createdAt": "2026-03-23T14:06:29.681Z",
+  "updatedAt": "2026-03-23T14:08:23.484Z",
+  "completedAt": "2026-03-23T14:08:15.569Z",
+  "expirationDate": "2026-04-06T14:06:29.804Z",
+  "isForIosSimulator": false,
+  "metrics": {
+    "buildWaitTime": 268,
+    "buildQueueTime": 50285,
+    "buildDuration": 55015
+  }
+}

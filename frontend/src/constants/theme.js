@@ -114,5 +114,6 @@ const getInferredDevApiUrl = () => {
 const inferredDevApiUrl = getInferredDevApiUrl();
 const extraApiUrlIsLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(String(extraApiUrl || ''));
 const safeExtraApiUrl = extraApiUrlIsLocalhost ? null : extraApiUrl;
+const renderApiUrl = 'https://luxurygleam.onrender.com/api';
 
-export const API_URL = envApiUrl || safeExtraApiUrl || inferredDevApiUrl || extraApiUrl || 'http://localhost:5000/api';
+export const API_URL = envApiUrl || safeExtraApiUrl || renderApiUrl || inferredDevApiUrl || extraApiUrl || 'http://localhost:5000/api';

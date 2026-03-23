@@ -3,58 +3,21 @@
     "name": "Luxury Gleam",
     "slug": "luxury-gleam",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1a0a00"
-    },
     "updates": {
       "fallbackToCacheTimeout": 0
     },
     "assetBundlePatterns": [
       "**/*"
     ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.luxurygleam.app",
-      "infoPlist": {
-        "NSCameraUsageDescription": "Allow Luxury Gleam to access your camera to take product photos.",
-        "NSPhotoLibraryUsageDescription": "Allow Luxury Gleam to access your photos."
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1a0a00"
-      },
-      "package": "com.luxurygleam.app",
-      "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "VIBRATE"
-      ]
-    },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#C9A84C"
-        }
-      ],
-      "expo-secure-store",
-      "expo-sqlite",
-      "expo-web-browser"
-    ],
     "extra": {
-      "API_URL": ""
-    }
+      "API_URL": "https://luxurygleam.onrender.com/api",
+      "eas": {
+        "projectId": "219ce62c-9a42-4ddd-8bb6-726cbe0c1160"
+      }
+    },
+    "owner": "jenard112003"
   }
 }

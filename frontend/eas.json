@@ -1,12 +1,14 @@
 {
   "cli": {
-    "version": ">= 5.0.0"
+    "version": ">= 5.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "distribution": "internal",
+      "developmentClient": true,
       "android": {
-        "gradleCommand": ":app:assembleDebug"
+        "buildType": "apk"
       },
       "ios": {
         "buildConfiguration": "Debug"
@@ -15,29 +17,27 @@
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildConfiguration": "release"
+        "buildType": "apk"
       },
       "ios": {
-        "buildConfiguration": "release"
+        "buildConfiguration": "Release"
       }
     },
     "production": {
       "android": {
-        "buildConfiguration": "release"
+        "buildType": "app-bundle"
       },
       "ios": {
-        "buildConfiguration": "release"
+        "buildConfiguration": "Release"
       }
-    }
-  },
-  "submit": {
-    "production": {
+    },
+    "production-apk": {
+      "distribution": "internal",
       "android": {
-        "serviceAccount": "path/to/service-account.json",
-        "track": "internal"
+        "buildType": "apk"
       },
       "ios": {
-        "ascAppId": "YOUR_ASC_APP_ID"
+        "buildConfiguration": "Release"
       }
     }
   }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Modal,
-  ActivityIndicator, TextInput, RefreshControl,
+  ActivityIndicator, TextInput, RefreshControl, ScrollView,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/native';
@@ -26,6 +26,7 @@ export default function AdminOrdersScreen({ navigation }) {
   const [promoModal, setPromoModal] = useState(false);
   const [sendingPromo, setSendingPromo] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
 
   // Auto-refresh on focus
   useFocusEffect(
@@ -144,18 +145,13 @@ export default function AdminOrdersScreen({ navigation }) {
             <Text style={styles.modalCustomer}>Customer: {selectedOrder?.user?.name}</Text>
 
             <Text style={styles.pickerLabel}>Select New Status</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={newStatus}
-                onValueChange={setNewStatus}
-                style={styles.picker}
-                dropdownIconColor={COLORS.primary}
-              >
-                {ORDER_STATUSES.map((s) => (
-                  <Picker.Item key={s} label={s} value={s} color={COLORS.text} />
-                ))}
-              </Picker>
-            </View>
+            <TouchableOpacity 
+              style={styles.pickerButton}
+              onPress={() => setStatusModalVisible(true)}
+            >
+              <Text style={styles.pickerButtonText}>{newStatus}</Text>
+              <Text style={styles.pickerButtonArrow}>▼</Text>
+            </TouchableOpacity>
 
             <View style={styles.notifNote}>
               <Text style={styles.notifNoteText}>
@@ -216,6 +212,34 @@ export default function AdminOrdersScreen({ navigation }) {
           </View>
         </View>
       </Modal>
+
+      {/* ── Status Picker Modal ──────────────────────────────────── */}
+      <Modal visible={statusModalVisible} transparent animationType="fade">
+        <View style={styles.statusModalOverlay}>
+          <View style={styles.statusModalCard}>
+            <Text style={styles.statusModalTitle}>Select Order Status</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {ORDER_STATUSES.map((s) => (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.statusOption, newStatus === s && styles.statusOptionActive]}
+                  onPress={() => {
+                    setNewStatus(s);
+                    setStatusModalVisible(false);
+                  }}
+                >
+                  <Text style={[styles.statusOptionText, newStatus === s && styles.statusOptionTextActive]}>
+                    {s}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={styles.statusModalClose} onPress={() => setStatusModalVisible(false)}>
+              <Text style={styles.statusModalCloseText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -261,6 +285,14 @@ const styles = StyleSheet.create({
   modalCustomer: { fontSize: 14, color: COLORS.textSecondary },
   modalSubtitle: { fontSize: 13, color: COLORS.textSecondary },
   pickerLabel: { fontSize: 12, color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
+  pickerButton: {
+    backgroundColor: COLORS.inputBg, borderWidth: 1,
+    borderColor: COLORS.border, borderRadius: BORDER_RADIUS.sm,
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.base,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+  },
+  pickerButtonText: { fontSize: 15, color: COLORS.text, fontWeight: '600' },
+  pickerButtonArrow: { fontSize: 12, color: COLORS.primary, fontWeight: '700' },
   pickerWrapper: {
     backgroundColor: COLORS.inputBg, borderWidth: 1,
     borderColor: COLORS.border, borderRadius: BORDER_RADIUS.sm, overflow: 'hidden',
@@ -286,4 +318,26 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.inputBg, borderWidth: 1, borderColor: COLORS.border,
     borderRadius: BORDER_RADIUS.sm, padding: SPACING.md, color: COLORS.text, fontSize: 14,
   },
+  statusModalOverlay: {
+    flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.md,
+  },
+  statusModalCard: {
+    backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.lg, maxHeight: '70%', width: '100%',
+    paddingVertical: SPACING.lg, paddingHorizontal: SPACING.md,
+  },
+  statusModalTitle: { fontSize: 18, color: COLORS.text, fontWeight: '700', marginBottom: SPACING.md, textAlign: 'center' },
+  statusOption: {
+    paddingVertical: SPACING.md, paddingHorizontal: SPACING.md, borderRadius: BORDER_RADIUS.sm,
+    marginBottom: SPACING.sm, borderWidth: 1, borderColor: COLORS.border,
+  },
+  statusOptionActive: {
+    backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary, borderWidth: 2,
+  },
+  statusOptionText: { color: COLORS.text, fontSize: 15 },
+  statusOptionTextActive: { color: COLORS.primary, fontWeight: '700' },
+  statusModalClose: {
+    marginTop: SPACING.md, alignItems: 'center', paddingVertical: SPACING.md,
+    borderTopWidth: 1, borderTopColor: COLORS.border,
+  },
+  statusModalCloseText: { color: COLORS.primary, fontSize: 14, fontWeight: '600' },
 });
