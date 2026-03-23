@@ -136,19 +136,89 @@ cp .env.example .env
 npm run dev   # starts on port 5000
 ```
 
+### Backend Deployment to Vercel
+
+Deploy the `backend/` folder as its own Vercel project.
+
+```bash
+cd backend
+npm install -g vercel
+vercel
+```
+
+When Vercel asks for settings, keep the project root as `backend`. This folder already includes `vercel.json` and `api/index.js`, which route all requests into the Express app.
+
+Set these environment variables in the Vercel dashboard for the backend project:
+
+```env
+MONGO_URI=mongodb+srv://...
+JWT_SECRET=your_super_secret
+JWT_EXPIRE=30d
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+NODE_ENV=production
+```
+
+After deployment, test the health endpoint:
+
+```bash
+https://your-backend-project.vercel.app/api/health
+```
+
+### Backend Deployment to Render
+
+This repo now includes a Render blueprint at `render.yaml`, so you can deploy the backend as a Node web service from the repo root.
+
+Manual Render setup also works with these values:
+
+```bash
+Root Directory: backend
+Build Command: npm install
+Start Command: npm start
+Health Check Path: /api/health
+```
+
+Set these environment variables in Render:
+
+```env
+MONGO_URI=mongodb+srv://...
+JWT_SECRET=your_super_secret
+JWT_EXPIRE=30d
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+NODE_ENV=production
+```
+
+After deploy, test:
+
+```bash
+https://your-render-service.onrender.com/api/health
+```
+
 ### Frontend
 
 ```bash
 cd frontend
 npm install
 
-# Update API_URL in src/constants/theme.js to your server's local IP:
-# export const API_URL = 'http://YOUR_LOCAL_IP:5000/api';
+# For local development you can keep Expo extra.API_URL as localhost,
+# or set an environment variable before starting Expo:
+# EXPO_PUBLIC_API_URL=https://your-backend-project.vercel.app/api
 
 npx expo start
 ```
 
-Scan the QR code with **Expo Go** on your phone (must be on the same WiFi network as your development machine).
+The frontend now reads the API URL from `EXPO_PUBLIC_API_URL` first, then `expo.extra.API_URL` in `app.json`.
+
+For the deployed backend, point it to your Vercel URL:
+
+```bash
+EXPO_PUBLIC_API_URL=https://your-backend-project.vercel.app/api
+```
+
+Scan the QR code with **Expo Go** on your phone.
 
 ---
 

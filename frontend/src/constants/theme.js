@@ -1,4 +1,6 @@
 // Luxury Gleam Design System — Dark Gold Luxury Theme
+import Constants from 'expo-constants';
+
 export const COLORS = {
   primary: '#C9A84C',       // Rich Gold
   primaryDark: '#A07830',   // Deep Gold
@@ -80,5 +82,37 @@ export const STATUS_COLORS = {
   Refunded: '#808080',
 };
 
-export const API_URL = 'http://10.122.119.26:5000/api'; // Change to your server IP/port
-//export const API_URL = 'http://196.168.100.58:5000/api'; // Change to your server IP/port
+const extraApiUrl = Constants.expoConfig?.extra?.API_URL;
+const envApiUrl = process.env.EXPO_PUBLIC_API_URL;
+const hostUri =
+  Constants.expoConfig?.hostUri ||
+  Constants.manifest2?.extra?.expoGo?.debuggerHost ||
+  Constants.manifest?.debuggerHost;
+
+const normalizeHost = (value) => {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  // Handles values like:
+  // - 192.168.1.10:8081
+  // - exp://192.168.1.10:8081
+  // - http://192.168.1.10:8081
+  // - abc.ngrok.io:443
+  const withoutScheme = raw.replace(/^[a-z]+:\/\//i, '');
+  const withoutPath = withoutScheme.split('/')[0];
+  const host = withoutPath.split(':')[0];
+  return host || null;
+};
+
+const getInferredDevApiUrl = () => {
+  const host = normalizeHost(hostUri);
+  if (!host) return null;
+  return `http://${host}:5000/api`;
+};
+
+const inferredDevApiUrl = getInferredDevApiUrl();
+const extraApiUrlIsLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(String(extraApiUrl || ''));
+const safeExtraApiUrl = extraApiUrlIsLocalhost ? null : extraApiUrl;
+
+export const API_URL = envApiUrl || safeExtraApiUrl || inferredDevApiUrl || extraApiUrl || 'http://localhost:5000/api';

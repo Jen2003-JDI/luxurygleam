@@ -54,7 +54,7 @@
       "expo-web-browser"
     ],
     "extra": {
-      "API_URL": "http://192.168.100.58:5000/api"
+      "API_URL": ""
     }
   }
 }

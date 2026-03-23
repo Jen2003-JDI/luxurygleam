@@ -1,9 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as SecureStore from 'expo-secure-store';
 import api from '../../../services/api';
+import { API_URL } from '../../../constants/theme';
 
 const getApiErrorMessage = (e, fallback) => {
-  if (!e?.response) return 'Cannot connect to server. Check API URL and ensure backend is running.';
+  if (!e?.response) return `Cannot connect to server. API URL: ${API_URL}`;
   return e.response?.data?.message || fallback;
 };
 
