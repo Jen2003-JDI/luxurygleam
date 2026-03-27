@@ -6,7 +6,7 @@ const { deleteImage } = require('../config/cloudinary');
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || '30d' });
 
-// @desc Register | @route POST /api/auth/register | @access Public
+
 const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) { res.status(400); throw new Error('Please provide all fields'); }
@@ -19,7 +19,7 @@ const register = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc Login | @route POST /api/auth/login | @access Public
+
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) { res.status(400); throw new Error('Please provide email and password'); }
@@ -32,7 +32,7 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc Social Login | @route POST /api/auth/social | @access Public
+
 const socialLogin = asyncHandler(async (req, res) => {
   const { name, email, googleId, facebookId, avatar, authProvider } = req.body;
   if (!email) { res.status(400); throw new Error('Email is required for social login'); }
@@ -53,13 +53,13 @@ const socialLogin = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc Get me | @route GET /api/auth/me | @access Private
+
 const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select('-password');
   res.json({ success: true, user });
 });
 
-// @desc Update profile | @route PUT /api/auth/profile | @access Private
+
 const updateProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   if (!user) { res.status(404); throw new Error('User not found'); }
@@ -69,7 +69,7 @@ const updateProfile = asyncHandler(async (req, res) => {
 
   const address = {};
 
-  // Accept JSON payload style: { address: { ... } }
+
   let jsonAddress = req.body.address;
   if (typeof jsonAddress === 'string') {
     try {
@@ -84,13 +84,13 @@ const updateProfile = asyncHandler(async (req, res) => {
     });
   }
 
-  // Accept FormData payload style: address[field]
+  
   Object.keys(req.body).forEach((key) => {
     const match = key.match(/^address\[(\w+)\]$/);
     if (match && typeof req.body[key] === 'string') address[match[1]] = req.body[key].trim();
   });
 
-  // Accept flat payload fallback: street, city, state, zip, country
+  
   ['street', 'city', 'state', 'zip', 'country'].forEach((field) => {
     if (typeof req.body[field] === 'string') address[field] = req.body[field].trim();
   });
@@ -99,7 +99,7 @@ const updateProfile = asyncHandler(async (req, res) => {
   if (req.file) {
     if (user.avatarPublicId) await deleteImage(user.avatarPublicId);
 
-    // Multer + Cloudinary adapters may expose file fields with different key names.
+    
     const uploadedUrl = req.file.path || req.file.secure_url || req.file.url || '';
     const uploadedPublicId = req.file.filename || req.file.public_id || '';
 
@@ -114,7 +114,7 @@ const updateProfile = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc Save push token | @route POST /api/auth/push-token | @access Private
+
 const savePushToken = asyncHandler(async (req, res) => {
   const { token } = req.body;
   if (!token) { res.status(400); throw new Error('Push token required'); }
@@ -123,14 +123,14 @@ const savePushToken = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Push token saved' });
 });
 
-// @desc Remove push token | @route DELETE /api/auth/push-token | @access Private
+
 const removePushToken = asyncHandler(async (req, res) => {
   const { token } = req.body;
   if (token) await User.findByIdAndUpdate(req.user._id, { $pull: { expoPushTokens: token } });
   res.json({ success: true, message: 'Push token removed' });
 });
 
-// @desc Forgot password (reset by email) | @route POST /api/auth/forgot-password | @access Public
+
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email, newPassword, confirmPassword } = req.body;
 
