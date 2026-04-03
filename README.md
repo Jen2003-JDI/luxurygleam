@@ -84,7 +84,7 @@ luxury-gleam/
     │   │   │   ├── OrdersScreen.js
     │   │   │   ├── OrderDetailScreen.js  # Progress tracker
     │   │   │   ├── OrderSuccessScreen.js
-    │   │   │   └── AdminOrdersScreen.js  # Status update + push notif
+    │   │   │   └── AdminOrdersScreen.js  # Status update + push notification
     │   │   ├── profile/
     │   │   │   └── ProfileScreen.js   # Photo upload, address
     │   │   ├── review/
@@ -111,7 +111,7 @@ luxury-gleam/
 | 2 | User Login/Register + Social | `LoginScreen`, `RegisterScreen`, social login via `/api/auth/social`. Avatar upload with camera/gallery. JWT stored in **Expo SecureStore** |
 | 3 | Review & Ratings | `WriteReviewScreen` — verified purchase check, star rating 1–5, image upload, update own review |
 | 4 | SQLite Cart | `cartDatabase.js` using `expo-sqlite`. Cart loads on app open, persists until checkout clears it |
-| 5 | Transaction + Push Notif | `AdminOrdersScreen` updates status → backend calls Expo Push API → user receives notification → tap opens `OrderDetailScreen` |
+| 5 | Transaction + Push Notification | `AdminOrdersScreen` updates status → backend calls Expo Push API → user receives notification → tap opens `OrderDetailScreen` |
 | 6 | Search + Filters | `SearchScreen` — keyword search, filter by category + price range (min/max), sort by newest/price/rating |
 | 7 | Promo Notifications | Admin sends global promo from `AdminOrdersScreen` → all users get push notification |
 | 8 | Redux | Applied to orders (`orderSlice`), products (`productSlice`), reviews (`reviewSlice`), cart, auth, notifications |
@@ -136,19 +136,37 @@ cp .env.example .env
 npm run dev   # starts on port 5000
 ```
 
-### Backend Deployment to Vercel
+## 🌐 Step-by-Step Deployment Guide
 
-Deploy the `backend/` folder as its own Vercel project.
+### A) Backend Deployment to Vercel (Step-by-Step)
+
+1. Install Vercel CLI and login.
+
+```bash
+npm i -g vercel
+vercel login
+```
+
+2. Go to backend folder.
 
 ```bash
 cd backend
-npm install -g vercel
+```
+
+3. Deploy backend project.
+
+```bash
 vercel
 ```
 
-When Vercel asks for settings, keep the project root as `backend`. This folder already includes `vercel.json` and `api/index.js`, which route all requests into the Express app.
+4. During prompts, use these values:
+- Set up and deploy: Yes
+- Scope: your account/team
+- Link to existing project: No (or Yes if already created)
+- Project name: luxurygleam-backend (or preferred name)
+- In which directory is your code located: .
 
-Set these environment variables in the Vercel dashboard for the backend project:
+5. Add environment variables in Vercel dashboard:
 
 ```env
 MONGO_URI=mongodb+srv://...
@@ -160,26 +178,41 @@ CLOUDINARY_API_SECRET=...
 NODE_ENV=production
 ```
 
-After deployment, test the health endpoint:
+6. Redeploy after adding env vars.
+
+```bash
+vercel --prod
+```
+
+7. Verify backend health endpoint.
 
 ```bash
 https://your-backend-project.vercel.app/api/health
 ```
 
-### Backend Deployment to Render
+### B) Backend Deployment to Render (Step-by-Step)
 
-This repo now includes a Render blueprint at `render.yaml`, so you can deploy the backend as a Node web service from the repo root.
+Option 1 (recommended): Use render.yaml blueprint from repo root.
 
-Manual Render setup also works with these values:
+1. Push latest code to GitHub.
 
 ```bash
-Root Directory: backend
-Build Command: npm install
-Start Command: npm start
-Health Check Path: /api/health
+git add .
+git commit -m "prepare deployment"
+git push
 ```
 
-Set these environment variables in Render:
+2. Open Render dashboard -> New -> Blueprint.
+
+3. Connect your GitHub repo and select this project.
+
+4. Render will detect render.yaml automatically. Confirm service settings:
+- Root Directory: backend
+- Build Command: npm install
+- Start Command: npm start
+- Health Check Path: /api/health
+
+5. Add required environment variables:
 
 ```env
 MONGO_URI=mongodb+srv://...
@@ -191,34 +224,80 @@ CLOUDINARY_API_SECRET=...
 NODE_ENV=production
 ```
 
-After deploy, test:
+6. Deploy and wait until status becomes Live.
+
+7. Verify backend health endpoint.
 
 ```bash
 https://your-render-service.onrender.com/api/health
 ```
 
-### Frontend
+### C) Frontend APK Deployment (Expo EAS Build)
+
+1. Go to frontend folder and install dependencies.
 
 ```bash
 cd frontend
 npm install
+```
 
-# For local development you can keep Expo extra.API_URL as localhost,
-# or set an environment variable before starting Expo:
-# EXPO_PUBLIC_API_URL=https://your-backend-project.vercel.app/api
+2. Ensure backend API URL is production URL (Render or Vercel):
 
+```bash
+# Windows PowerShell (temporary for current terminal)
+$env:EXPO_PUBLIC_API_URL="https://your-render-service.onrender.com/api"
+
+# macOS/Linux (temporary for current terminal)
+export EXPO_PUBLIC_API_URL="https://your-render-service.onrender.com/api"
+```
+
+3. Login to Expo and initialize EAS (one-time setup).
+
+```bash
+npx expo login
+npx eas login
+npx eas init
+```
+
+4. Generate Android keystore (first build only).
+
+```bash
+npx eas credentials
+```
+
+5. Build APK using APK profile.
+
+```bash
+npx eas build --platform android --profile production-apk
+```
+
+6. If build fails with lock-file warning, generate and commit lock file then rebuild.
+
+```bash
+npm install
+git add -f package-lock.json
+git commit -m "add lock file for eas build"
+git push
+npx eas build --platform android --profile production-apk
+```
+
+7. Open the build URL from terminal, download APK, then install on Android device.
+
+8. Optional: Check latest build status.
+
+```bash
+npx eas build:list --platform android --limit 5
+```
+
+### D) Frontend Local Run (Expo Go)
+
+```bash
+cd frontend
+npm install
 npx expo start
 ```
 
-The frontend now reads the API URL from `EXPO_PUBLIC_API_URL` first, then `expo.extra.API_URL` in `app.json`.
-
-For the deployed backend, point it to your Vercel URL:
-
-```bash
-EXPO_PUBLIC_API_URL=https://your-backend-project.vercel.app/api
-```
-
-Scan the QR code with **Expo Go** on your phone.
+Scan QR using Expo Go.
 
 ---
 
